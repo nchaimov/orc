@@ -33,7 +33,7 @@ public class Orc {
         @Parameter(names = {"-e", "--seed"}, description = "Seed for random number generator.")
         public Long seed = null;
 
-        @Parameter(names = {"-s", "--size"}, description = "Size of each file.")
+        @Parameter(names = {"-s", "--size"}, description = "Size of each read.")
         public Long size = 4096L;
 
         @Parameter(names = {"-f", "--file"}, description = "Base name of output file.")
@@ -70,7 +70,7 @@ public class Orc {
         for(int i = 0; i < options.iterations; ++i) {
             log(MessageFormat.format("Iteration {0}", i));
             String filename = options.filename + MessageFormat.format("_{0}", i);
-            boolean createSuccess = createFile(filename, options.size);
+            boolean createSuccess = createFile(filename, options.size * options.reads);
             long orcCumulative = 0L;
             long ormcCumulative = 0L;
             if(createSuccess) {
@@ -182,8 +182,9 @@ public class Orc {
         try {
             for (int i = 0; i < options.reads; ++i) {
                 File f = new File(path);
-                long fsize = f.length();
+                long fsize = options.size;
                 FileInputStream fis = new FileInputStream(f);
+                fis.getChannel().position(i*fsize);
                 bytes = new byte[(int)fsize];
                 fis.read(bytes);
                 fis.close();
@@ -201,13 +202,12 @@ public class Orc {
         boolean result = true;
         try {
             File f = new File(path);
-            long fsize = f.length();
+            long fsize = options.size;
             FileInputStream fis = new FileInputStream(f);
             FileChannel fc = fis.getChannel();
             for (int i = 0; i < options.reads; ++i) {
                 bytes = new byte[(int)fsize];
                 fis.read(bytes);
-                fc.position(0);
             }
             fis.close();
         } catch (IOException e) {
