@@ -74,17 +74,32 @@ public class Orc {
             long orcCumulative = 0L;
             long ormcCumulative = 0L;
             if(createSuccess) {
-                // ORC
-                long before = System.nanoTime();
-                boolean orcSuccess = openReadClose(filename);
-                long after = System.nanoTime();
-                orcCumulative += (after-before);
+                if(i % 2 == 0) {
+                    // ORC
+                    long before = System.nanoTime();
+                    boolean orcSuccess = openReadClose(filename);
+                    long after = System.nanoTime();
+                    orcCumulative += (after - before);
 
-                // ORmC
-                before = System.nanoTime();
-                boolean ormcSuccess = openReadManyClose(filename);
-                after = System.nanoTime();
-                ormcCumulative += (after-before);
+                    // ORmC
+                    before = System.nanoTime();
+                    boolean ormcSuccess = openReadManyClose(filename);
+                    after = System.nanoTime();
+                    ormcCumulative += (after - before);
+                } else {
+                    // ORmC
+                    long before = System.nanoTime();
+                    boolean ormcSuccess = openReadManyClose(filename);
+                    long after = System.nanoTime();
+                    ormcCumulative += (after - before);
+
+                    // ORC
+                    before = System.nanoTime();
+                    boolean orcSuccess = openReadClose(filename);
+                    after = System.nanoTime();
+                    orcCumulative += (after - before);
+
+                }
 
                 boolean deleteSuccess = deleteFile(filename);
             }
@@ -93,7 +108,7 @@ public class Orc {
             log(MessageFormat.format("Time for O(nR)C:\t{1,number,#}", options.reads, ormcCumulative));
 
             orcStats.addValue(orcCumulative / (double) options.reads);
-            ormcStats.addValue(ormcCumulative/(double)options.reads);
+            ormcStats.addValue(ormcCumulative / (double) options.reads);
         }
 
         System.out.println();
