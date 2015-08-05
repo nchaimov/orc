@@ -116,6 +116,10 @@ public class Orc {
         System.out.println(orcStats.toString());
         System.out.println("O(nR)C: ");
         System.out.println(ormcStats.toString());
+        System.out.println();
+
+        double slowdown = orcStats.getMean() / ormcStats.getMean();
+        System.out.println(MessageFormat.format("ORC slowdown is {0,number,#}", slowdown));
 
     }
 
@@ -204,7 +208,6 @@ public class Orc {
             File f = new File(path);
             long fsize = options.size;
             FileInputStream fis = new FileInputStream(f);
-            FileChannel fc = fis.getChannel();
             for (int i = 0; i < options.reads; ++i) {
                 bytes = new byte[(int)fsize];
                 fis.read(bytes);
