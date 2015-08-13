@@ -31,7 +31,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
                 CtMethod m = cc.getDeclaredMethod("open");
-                m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#openedInputFile($1);");
+                m.addLocalVariable("$open_started_time$", CtClass.longType);
+                m.addLocalVariable("$open_finished_time$", CtClass.longType);
+                m.insertBefore("$open_started_time$ = System.nanoTime(); ");
+                m.insertAfter("$open_finished_time$ = System.nanoTime(); net.chaimov.orc.agent.FileStreamStatistics#openedInputFile($1, $open_finished_time$ - $open_started_time$);");
                 m = cc.getDeclaredMethod("close");
                 m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#closedInputFile(this.path, this.closed);");
                 byteCode = cc.toBytecode();
@@ -43,7 +46,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
                 CtMethod m = cc.getDeclaredMethod("open");
-                m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#openedOutputFile($1);");
+                m.addLocalVariable("$open_started_time$", CtClass.longType);
+                m.addLocalVariable("$open_finished_time$", CtClass.longType);
+                m.insertBefore("$open_started_time$ = System.nanoTime(); ");
+                m.insertAfter("$open_finished_time$ = System.nanoTime(); net.chaimov.orc.agent.FileStreamStatistics#openedOutputFile($1, $open_finished_time$ - $open_started_time$);");
                 m = cc.getDeclaredMethod("close");
                 m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#closedOutputFile(this.path, this.closed);");
                 byteCode = cc.toBytecode();
