@@ -4,30 +4,33 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Created by nchaimov on 8/12/15.
  */
 public class FileStreamStatistics {
-    private static AtomicLong fileInputStreamOpenCalls = new AtomicLong(0L);
-    private static AtomicLong fileOutputStreamOpenCalls = new AtomicLong(0L);
-    private static AtomicLong fileInputStreamCloseCalls = new AtomicLong(0L);
-    private static AtomicLong fileOutputStreamCloseCalls = new AtomicLong(0L);
-    private static AtomicLong fileInputStreamOpenTime = new AtomicLong(0L);
-    private static AtomicLong fileOutputStreamOpenTime = new AtomicLong(0L);
+    private static LongAdder fileInputStreamOpenCalls = new LongAdder();
+    private static LongAdder fileOutputStreamOpenCalls = new LongAdder();
+    private static LongAdder fileInputStreamCloseCalls = new LongAdder();
+    private static LongAdder fileOutputStreamCloseCalls = new LongAdder();
+    private static LongAdder fileInputStreamOpenTime = new LongAdder();
+    private static LongAdder fileOutputStreamOpenTime = new LongAdder();
+    private static LongAdder fileInputStreamReadCalls = new LongAdder();
+    private static LongAdder fileOutputStreamWriteCalls = new LongAdder();
 
     public static class PerFileStatistics {
-        public AtomicLong inputOpens = new AtomicLong(0L);
-        public AtomicLong inputCloses = new AtomicLong(0L);
-        public AtomicLong outputOpens = new AtomicLong(0L);
-        public AtomicLong outputCloses = new AtomicLong(0L);
-        public AtomicLong cumulativeInputOpenTime = new AtomicLong(0L);
-        public AtomicLong cumulativeOutputOpenTime = new AtomicLong(0L);
+        public LongAdder inputOpens = new LongAdder();
+        public LongAdder inputCloses = new LongAdder();
+        public LongAdder outputOpens = new LongAdder();
+        public LongAdder outputCloses = new LongAdder();
+        public LongAdder cumulativeInputOpenTime = new LongAdder();
+        public LongAdder cumulativeOutputOpenTime = new LongAdder();
 
         public String toString() {
-            return String.format("%-10d %-10d %-10d %-10d %-20d %-20d", inputOpens.get(), inputCloses.get(),
-                    outputOpens.get(), outputCloses.get(), cumulativeInputOpenTime.get(),
-                    cumulativeOutputOpenTime.get());
+            return String.format("%-10d %-10d %-10d %-10d %-20d %-20d", inputOpens.sum(), inputCloses.sum(),
+                    outputOpens.sum(), outputCloses.sum(), cumulativeInputOpenTime.sum(),
+                    cumulativeOutputOpenTime.sum());
         }
     }
 
@@ -42,40 +45,46 @@ public class FileStreamStatistics {
         return path;
     }
 
+    // Unused warning is suppressed on these methods because they are only used in injected code.
+
+    @SuppressWarnings( "unused" )
     public static void openedInputFile(String path, long time_ns) {
-        fileInputStreamOpenCalls.incrementAndGet();
-        fileInputStreamOpenTime.addAndGet(time_ns);
+        fileInputStreamOpenCalls.increment();
+        fileInputStreamOpenTime.add(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.inputOpens.incrementAndGet();
-        pf.cumulativeInputOpenTime.addAndGet(time_ns);
+        pf.inputOpens.increment();
+        pf.cumulativeInputOpenTime.add(time_ns);
     }
 
+    @SuppressWarnings( "unused" )
     public static void closedInputFile(String path, boolean closed) {
         if(closed) {
             return;
         }
-        fileInputStreamCloseCalls.incrementAndGet();
+        fileInputStreamCloseCalls.increment();
         path = ensureStatsExist(path);
-        perFileStatistics.get(path).inputCloses.incrementAndGet();
+        perFileStatistics.get(path).inputCloses.increment();
     }
 
+    @SuppressWarnings( "unused" )
     public static void openedOutputFile(String path, long time_ns) {
-        fileOutputStreamOpenCalls.incrementAndGet();
-        fileOutputStreamOpenTime.addAndGet(time_ns);
+        fileOutputStreamOpenCalls.increment();
+        fileOutputStreamOpenTime.add(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.outputOpens.incrementAndGet();
-        pf.cumulativeOutputOpenTime.addAndGet(time_ns);
+        pf.outputOpens.increment();
+        pf.cumulativeOutputOpenTime.add(time_ns);
     }
 
+    @SuppressWarnings( "unused" )
     public static void closedOutputFile(String path, boolean closed) {
         if(closed) {
             return;
         }
-        fileOutputStreamCloseCalls.incrementAndGet();
+        fileOutputStreamCloseCalls.increment();
         path = ensureStatsExist(path);
-        perFileStatistics.get(path).outputCloses.incrementAndGet();
+        perFileStatistics.get(path).outputCloses.increment();
     }
 
     public static String asString() {
@@ -86,12 +95,12 @@ public class FileStreamStatistics {
         }
         sb.append(String.format("\n%-128s\t%-10s %-10s %-10s %-10s %-20s %-20s\n",
                 "TOTAL",
-                fileInputStreamOpenCalls.get(),
-                fileInputStreamCloseCalls.get(),
-                fileOutputStreamOpenCalls.get(),
-                fileOutputStreamCloseCalls.get(),
-                fileInputStreamOpenTime.get(),
-                fileOutputStreamOpenTime.get()));
+                fileInputStreamOpenCalls.sum(),
+                fileInputStreamCloseCalls.sum(),
+                fileOutputStreamOpenCalls.sum(),
+                fileOutputStreamCloseCalls.sum(),
+                fileInputStreamOpenTime.sum(),
+                fileOutputStreamOpenTime.sum()));
         return sb.toString();
     }
 }
