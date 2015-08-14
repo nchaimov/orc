@@ -122,9 +122,9 @@ public class FileStreamStatistics {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("path,%s\n", PerFileStatistics.getHeader()));
         for (Map.Entry<String, PerFileStatistics> entry : perFileStatistics.entrySet()) {
-            sb.append(String.format("%s,%s\n", entry.getKey(), entry.getValue().toString()));
+            sb.append(String.format("\"%s\",%s\n", entry.getKey(), entry.getValue().toString()));
         }
-        sb.append(String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        sb.append(String.format("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
                 "<TOTAL>",
                 fileInputStreamOpenCalls.sum(),
                 fileInputStreamCloseCalls.sum(),
