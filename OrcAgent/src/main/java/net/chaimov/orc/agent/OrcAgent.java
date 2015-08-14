@@ -11,6 +11,7 @@ import java.lang.instrument.UnmodifiableClassException;
 
 public class OrcAgent {
 
+    @SuppressWarnings("unused")
     public static void premain(String args, Instrumentation inst) {
         inst.addTransformer(new FileStreamInstrumentationTransformer(), true);
         System.out.println("OrcAgent is registered.");
@@ -33,5 +34,10 @@ public class OrcAgent {
             }
         }));
 
+    }
+
+    @SuppressWarnings("unused")
+    public static void agentmain(String args, Instrumentation inst) {
+        premain(args, inst);
     }
 }

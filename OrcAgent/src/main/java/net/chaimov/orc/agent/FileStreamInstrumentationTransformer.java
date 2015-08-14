@@ -7,6 +7,7 @@ import javassist.CtMethod;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
+import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
 /**
@@ -41,6 +42,18 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
         m.insertAfter("$read_finished_time$ = System.nanoTime();" +
                 "net.chaimov.orc.agent.FileStreamStatistics#readInputFile(" +
                 "this.path, $read_finished_time$ - $read_started_time$);");
+    }
+
+    private void instrumentWrite(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            return;
+        }
+        m.addLocalVariable("$write_started_time$", CtClass.longType);
+        m.addLocalVariable("$write_finished_time$", CtClass.longType);
+        m.insertBefore("$write_started_time$ = System.nanoTime(); ");
+        m.insertAfter("$write_finished_time$ = System.nanoTime();" +
+                "net.chaimov.orc.agent.FileStreamStatistics#writeOutputFile(" +
+                "this.path, $write_finished_time$ - $write_started_time$);");
     }
 
     private void instrumentOutputOpen(CtMethod m) throws CannotCompileException {
@@ -103,6 +116,12 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
                 ms = cc.getDeclaredMethods("close");
                 for(CtMethod m : ms) {
                     instrumentOutputClose(m);
+                }
+
+                // write
+                ms = cc.getDeclaredMethods("write");
+                for(CtMethod m : ms) {
+                    instrumentWrite(m);
                 }
 
                 byteCode = cc.toBytecode();
