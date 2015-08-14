@@ -77,7 +77,7 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
 
         byte[] byteCode = classfileBuffer;
 
-        if (className.endsWith("FileInputStream")) {
+        if (className.equals("java/io/FileInputStream")) {
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
 
@@ -108,7 +108,7 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        } else if (className.endsWith("FileOutputStream")) {
+        } else if (className.equals("java/io/FileOutputStream")) {
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
 
