@@ -17,6 +17,7 @@ public class FileStreamStatistics {
     private static LongAdder fileInputStreamOpenTime = new LongAdder();
     private static LongAdder fileOutputStreamOpenTime = new LongAdder();
     private static LongAdder fileInputStreamReadCalls = new LongAdder();
+    private static LongAdder fileInputStreamReadTime = new LongAdder();
     private static LongAdder fileOutputStreamWriteCalls = new LongAdder();
 
     public static class PerFileStatistics {
@@ -24,13 +25,21 @@ public class FileStreamStatistics {
         public LongAdder inputCloses = new LongAdder();
         public LongAdder outputOpens = new LongAdder();
         public LongAdder outputCloses = new LongAdder();
+        public LongAdder reads = new LongAdder();
+        public LongAdder writes = new LongAdder();
         public LongAdder cumulativeInputOpenTime = new LongAdder();
         public LongAdder cumulativeOutputOpenTime = new LongAdder();
+        public LongAdder cumulativeReadTime = new LongAdder();
+        public LongAdder cumulativeWriteTime = new LongAdder();
+
+        public static String getHeader() {
+            return "inputOpens,inputCloses,outputOpens,outputCloses,inputOpenTime,outputOpenTime,reads,readTime";
+        }
 
         public String toString() {
-            return String.format("%-10d %-10d %-10d %-10d %-20d %-20d", inputOpens.sum(), inputCloses.sum(),
+            return String.format("%d,%d,%d,%d,%d,%d,%d,%d", inputOpens.sum(), inputCloses.sum(),
                     outputOpens.sum(), outputCloses.sum(), cumulativeInputOpenTime.sum(),
-                    cumulativeOutputOpenTime.sum());
+                    cumulativeOutputOpenTime.sum(), reads.sum(), cumulativeReadTime.sum());
         }
     }
 
@@ -87,20 +96,32 @@ public class FileStreamStatistics {
         perFileStatistics.get(path).outputCloses.increment();
     }
 
+    @SuppressWarnings( "unused" )
+    public static void readInputFile(String path, long time_ns) {
+        fileInputStreamReadCalls.increment();
+        fileInputStreamReadTime.add(time_ns);
+        path = ensureStatsExist(path);
+        PerFileStatistics pf = perFileStatistics.get(path);
+        pf.reads.increment();
+        pf.cumulativeReadTime.add(time_ns);
+    }
+
     public static String asString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%-128s\t%-10s %-10s %-10s %-10s %-20s %-20s\n", "path", "iOpen", "iClose", "oOpen", "oClose", "iOpenTime", "oOpenTime"));
+        sb.append(String.format("path,%s\n", PerFileStatistics.getHeader()));
         for (Map.Entry<String, PerFileStatistics> entry : perFileStatistics.entrySet()) {
-            sb.append(String.format("%-128s\t%-40s\n", entry.getKey(), entry.getValue().toString()));
+            sb.append(String.format("%s,%s\n", entry.getKey(), entry.getValue().toString()));
         }
-        sb.append(String.format("\n%-128s\t%-10s %-10s %-10s %-10s %-20s %-20s\n",
-                "TOTAL",
+        sb.append(String.format("%s,%d,%d,%d,%d,%d,%d,%d,%d\n",
+                "<TOTAL>",
                 fileInputStreamOpenCalls.sum(),
                 fileInputStreamCloseCalls.sum(),
                 fileOutputStreamOpenCalls.sum(),
                 fileOutputStreamCloseCalls.sum(),
                 fileInputStreamOpenTime.sum(),
-                fileOutputStreamOpenTime.sum()));
+                fileOutputStreamOpenTime.sum(),
+                fileInputStreamReadCalls.sum(),
+                fileInputStreamReadTime.sum()));
         return sb.toString();
     }
 }
