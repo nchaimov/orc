@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
+import java.text.MessageFormat;
 
 /**
  * Created by nchaimov on 8/7/15.
@@ -13,7 +14,13 @@ public class OrcAgent {
 
     @SuppressWarnings("unused")
     public static void premain(String args, Instrumentation inst) {
-        inst.addTransformer(new FileStreamInstrumentationTransformer(), true);
+        boolean verbose = false;
+        if(args != null) {
+            if(args.contains("verbose")) {
+                verbose = true;
+            }
+        }
+        inst.addTransformer(new FileStreamInstrumentationTransformer(verbose), true);
         System.out.println("OrcAgent is registered.");
 
         if(!inst.isRetransformClassesSupported()) {

@@ -16,10 +16,12 @@ import java.security.ProtectionDomain;
 public class FileStreamInstrumentationTransformer implements ClassFileTransformer {
 
     private final ClassPool pool;
+    private final boolean verbose;
 
-    public FileStreamInstrumentationTransformer() {
+    public FileStreamInstrumentationTransformer(boolean verbose) {
         this.pool = ClassPool.getDefault();
         this.pool.importPackage("net.chaimov.orc.agent");
+        this.verbose = verbose;
     }
 
     private void instrumentInputOpen(CtMethod m) throws CannotCompileException {
@@ -79,6 +81,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
 
+                if(verbose) {
+                    System.err.printf("Transforming %s.\n", className);
+                }
+
                 // open
                 CtMethod[] ms = cc.getDeclaredMethods("open");
                 for(CtMethod m : ms) {
@@ -105,6 +111,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
         } else if (className.endsWith("FileOutputStream")) {
             try {
                 CtClass cc = pool.get(className.replaceAll("/", "."));
+
+                if(verbose) {
+                    System.err.printf("Transforming %s.\n", className);
+                }
 
                 //open
                 CtMethod[] ms = cc.getDeclaredMethods("open");
