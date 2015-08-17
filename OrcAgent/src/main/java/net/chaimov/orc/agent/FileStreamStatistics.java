@@ -4,49 +4,50 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by nchaimov on 8/12/15.
  */
 public class FileStreamStatistics {
-    private static LongAdder fileInputStreamOpenCalls = new LongAdder();
-    private static LongAdder fileOutputStreamOpenCalls = new LongAdder();
-    private static LongAdder fileInputStreamCloseCalls = new LongAdder();
-    private static LongAdder fileOutputStreamCloseCalls = new LongAdder();
-    private static LongAdder fileInputStreamOpenTime = new LongAdder();
-    private static LongAdder fileOutputStreamOpenTime = new LongAdder();
-    private static LongAdder fileInputStreamReadCalls = new LongAdder();
-    private static LongAdder fileInputStreamReadTime = new LongAdder();
-    private static LongAdder fileOutputStreamWriteCalls = new LongAdder();
-    private static LongAdder fileOutputStreamWriteTime = new LongAdder();
+    private static AtomicLong fileInputStreamOpenCalls = new AtomicLong();
+    private static AtomicLong fileOutputStreamOpenCalls = new AtomicLong();
+    private static AtomicLong fileInputStreamCloseCalls = new AtomicLong();
+    private static AtomicLong fileOutputStreamCloseCalls = new AtomicLong();
+    private static AtomicLong fileInputStreamOpenTime = new AtomicLong();
+    private static AtomicLong fileOutputStreamOpenTime = new AtomicLong();
+    private static AtomicLong fileInputStreamReadCalls = new AtomicLong();
+    private static AtomicLong fileInputStreamReadTime = new AtomicLong();
+    private static AtomicLong fileOutputStreamWriteCalls = new AtomicLong();
+    private static AtomicLong fileOutputStreamWriteTime = new AtomicLong();
 
     public static class PerFileStatistics {
-        public LongAdder inputOpens = new LongAdder();
-        public LongAdder inputCloses = new LongAdder();
-        public LongAdder outputOpens = new LongAdder();
-        public LongAdder outputCloses = new LongAdder();
-        public LongAdder reads = new LongAdder();
-        public LongAdder writes = new LongAdder();
-        public LongAdder cumulativeInputOpenTime = new LongAdder();
-        public LongAdder cumulativeOutputOpenTime = new LongAdder();
-        public LongAdder cumulativeReadTime = new LongAdder();
-        public LongAdder cumulativeWriteTime = new LongAdder();
+        public AtomicLong inputOpens = new AtomicLong();
+        public AtomicLong inputCloses = new AtomicLong();
+        public AtomicLong outputOpens = new AtomicLong();
+        public AtomicLong outputCloses = new AtomicLong();
+        public AtomicLong reads = new AtomicLong();
+        public AtomicLong writes = new AtomicLong();
+        public AtomicLong cumulativeInputOpenTime = new AtomicLong();
+        public AtomicLong cumulativeOutputOpenTime = new AtomicLong();
+        public AtomicLong cumulativeReadTime = new AtomicLong();
+        public AtomicLong cumulativeWriteTime = new AtomicLong();
 
         public static String getHeader() {
             return "inputOpens,inputCloses,outputOpens,outputCloses,inputOpenTime,outputOpenTime,reads,readTime,writes,writeTime";
         }
 
         public String toString() {
-            return String.format("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", inputOpens.sum(), inputCloses.sum(),
-                    outputOpens.sum(), outputCloses.sum(), cumulativeInputOpenTime.sum(),
-                    cumulativeOutputOpenTime.sum(), reads.sum(), cumulativeReadTime.sum(),
-                    writes.sum(), cumulativeWriteTime.sum());
+            return String.format("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", inputOpens.get(), inputCloses.get(),
+                    outputOpens.get(), outputCloses.get(), cumulativeInputOpenTime.get(),
+                    cumulativeOutputOpenTime.get(), reads.get(), cumulativeReadTime.get(),
+                    writes.get(), cumulativeWriteTime.get());
         }
     }
 
     private static ConcurrentMap<String, PerFileStatistics> perFileStatistics =
             new ConcurrentHashMap<String, PerFileStatistics>();
+
 
     private static String ensureStatsExist(String path) {
         if (path == null) {
@@ -60,12 +61,12 @@ public class FileStreamStatistics {
 
     @SuppressWarnings( "unused" )
     public static void openedInputFile(String path, long time_ns) {
-        fileInputStreamOpenCalls.increment();
-        fileInputStreamOpenTime.add(time_ns);
+        fileInputStreamOpenCalls.incrementAndGet();
+        fileInputStreamOpenTime.addAndGet(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.inputOpens.increment();
-        pf.cumulativeInputOpenTime.add(time_ns);
+        pf.inputOpens.incrementAndGet();
+        pf.cumulativeInputOpenTime.addAndGet(time_ns);
     }
 
     @SuppressWarnings( "unused" )
@@ -73,19 +74,19 @@ public class FileStreamStatistics {
         if(closed) {
             return;
         }
-        fileInputStreamCloseCalls.increment();
+        fileInputStreamCloseCalls.incrementAndGet();
         path = ensureStatsExist(path);
-        perFileStatistics.get(path).inputCloses.increment();
+        perFileStatistics.get(path).inputCloses.incrementAndGet();
     }
 
     @SuppressWarnings( "unused" )
     public static void openedOutputFile(String path, long time_ns) {
-        fileOutputStreamOpenCalls.increment();
-        fileOutputStreamOpenTime.add(time_ns);
+        fileOutputStreamOpenCalls.incrementAndGet();
+        fileOutputStreamOpenTime.addAndGet(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.outputOpens.increment();
-        pf.cumulativeOutputOpenTime.add(time_ns);
+        pf.outputOpens.incrementAndGet();
+        pf.cumulativeOutputOpenTime.addAndGet(time_ns);
     }
 
     @SuppressWarnings( "unused" )
@@ -93,29 +94,29 @@ public class FileStreamStatistics {
         if(closed) {
             return;
         }
-        fileOutputStreamCloseCalls.increment();
+        fileOutputStreamCloseCalls.incrementAndGet();
         path = ensureStatsExist(path);
-        perFileStatistics.get(path).outputCloses.increment();
+        perFileStatistics.get(path).outputCloses.incrementAndGet();
     }
 
     @SuppressWarnings( "unused" )
     public static void readInputFile(String path, long time_ns) {
-        fileInputStreamReadCalls.increment();
-        fileInputStreamReadTime.add(time_ns);
+        fileInputStreamReadCalls.incrementAndGet();
+        fileInputStreamReadTime.addAndGet(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.reads.increment();
-        pf.cumulativeReadTime.add(time_ns);
+        pf.reads.incrementAndGet();
+        pf.cumulativeReadTime.addAndGet(time_ns);
     }
 
     @SuppressWarnings( "unused" )
     public static void writeOutputFile(String path, long time_ns) {
-        fileOutputStreamWriteCalls.increment();
-        fileOutputStreamWriteTime.add(time_ns);
+        fileOutputStreamWriteCalls.incrementAndGet();
+        fileOutputStreamWriteTime.addAndGet(time_ns);
         path = ensureStatsExist(path);
         PerFileStatistics pf = perFileStatistics.get(path);
-        pf.writes.increment();
-        pf.cumulativeWriteTime.add(time_ns);
+        pf.writes.incrementAndGet();
+        pf.cumulativeWriteTime.addAndGet(time_ns);
     }
 
     public static String asString() {
@@ -126,16 +127,16 @@ public class FileStreamStatistics {
         }
         sb.append(String.format("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
                 "<TOTAL>",
-                fileInputStreamOpenCalls.sum(),
-                fileInputStreamCloseCalls.sum(),
-                fileOutputStreamOpenCalls.sum(),
-                fileOutputStreamCloseCalls.sum(),
-                fileInputStreamOpenTime.sum(),
-                fileOutputStreamOpenTime.sum(),
-                fileInputStreamReadCalls.sum(),
-                fileInputStreamReadTime.sum(),
-                fileOutputStreamWriteCalls.sum(),
-                fileOutputStreamWriteTime.sum()));
+                fileInputStreamOpenCalls.get(),
+                fileInputStreamCloseCalls.get(),
+                fileOutputStreamOpenCalls.get(),
+                fileOutputStreamCloseCalls.get(),
+                fileInputStreamOpenTime.get(),
+                fileOutputStreamOpenTime.get(),
+                fileInputStreamReadCalls.get(),
+                fileInputStreamReadTime.get(),
+                fileOutputStreamWriteCalls.get(),
+                fileOutputStreamWriteTime.get()));
         return sb.toString();
     }
 }
