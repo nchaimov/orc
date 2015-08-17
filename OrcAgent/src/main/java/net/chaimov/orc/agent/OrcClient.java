@@ -21,6 +21,8 @@ public class OrcClient {
 
        for(int i = 0; i < iterations; ++i) {
            final int finalI = i;
+           final String outname = "bar_" + finalI;
+           files.add(outname);
            Thread t = new Thread(new Runnable() {
                public void run() {
                    try {
@@ -29,8 +31,6 @@ public class OrcClient {
                        byte[] contents = new byte[(int) len];
                        fis.read(contents);
                        fis.close();
-                       String outname = "bar_" + finalI;
-                       files.add(outname);
                        FileOutputStream fos = new FileOutputStream(outname);
                        fos.write(contents);
                        fos.close();
