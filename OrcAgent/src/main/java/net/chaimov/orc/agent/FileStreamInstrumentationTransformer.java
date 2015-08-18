@@ -4,11 +4,12 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.Modifier;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
+import java.text.MessageFormat;
 
 /**
  * Created by nchaimov on 8/7/15.
@@ -25,6 +26,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
     }
 
     private void instrumentInputOpen(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
+            return;
+        }
         m.addLocalVariable("$open_started_time$", CtClass.longType);
         m.addLocalVariable("$open_finished_time$", CtClass.longType);
         m.insertBefore("$open_started_time$ = System.nanoTime(); ");
@@ -34,10 +39,18 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
     }
 
     private void instrumentInputClose(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
+            return;
+        }
         m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#closedInputFile(this.path, this.closed);");
     }
 
     private void instrumentRead(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
+            return;
+        }
         m.addLocalVariable("$read_started_time$", CtClass.longType);
         m.addLocalVariable("$read_finished_time$", CtClass.longType);
         m.insertBefore("$read_started_time$ = System.nanoTime(); ");
@@ -48,6 +61,7 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
 
     private void instrumentWrite(CtMethod m) throws CannotCompileException {
         if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
             return;
         }
         m.addLocalVariable("$write_started_time$", CtClass.longType);
@@ -59,6 +73,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
     }
 
     private void instrumentOutputOpen(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
+            return;
+        }
         m.addLocalVariable("$open_started_time$", CtClass.longType);
         m.addLocalVariable("$open_finished_time$", CtClass.longType);
         m.insertBefore("$open_started_time$ = System.nanoTime(); ");
@@ -68,6 +86,10 @@ public class FileStreamInstrumentationTransformer implements ClassFileTransforme
     }
 
     private void instrumentOutputClose(CtMethod m) throws CannotCompileException {
+        if(Modifier.isNative(m.getModifiers())) {
+            System.err.println(MessageFormat.format("Skipping native {0}", m.getLongName()));
+            return;
+        }
         m.insertBefore("net.chaimov.orc.agent.FileStreamStatistics#closedOutputFile(this.path, this.closed);");
     }
 

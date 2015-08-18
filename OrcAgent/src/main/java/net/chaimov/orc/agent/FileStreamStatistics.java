@@ -70,6 +70,11 @@ public class FileStreamStatistics {
     }
 
     @SuppressWarnings( "unused" )
+    public static void closedInputFile(String path) {
+        closedInputFile(path, false);
+    }
+
+    @SuppressWarnings( "unused" )
     public static void closedInputFile(String path, boolean closed) {
         if(closed) {
             return;
@@ -87,6 +92,10 @@ public class FileStreamStatistics {
         PerFileStatistics pf = perFileStatistics.get(path);
         pf.outputOpens.incrementAndGet();
         pf.cumulativeOutputOpenTime.addAndGet(time_ns);
+    }
+
+    public static void closedOutputFile(String path) {
+        closedOutputFile(path, false);
     }
 
     @SuppressWarnings( "unused" )
