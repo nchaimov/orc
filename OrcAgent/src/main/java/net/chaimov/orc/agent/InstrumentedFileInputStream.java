@@ -167,4 +167,8 @@ public class InstrumentedFileInputStream extends InputStream {
         return wrappedStream.toString();
     }
 
+    public static void closePool() throws Exception {
+        pool.clear();
+        pool.close();
+    }
 }

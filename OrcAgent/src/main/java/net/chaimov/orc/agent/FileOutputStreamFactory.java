@@ -21,7 +21,6 @@ public class FileOutputStreamFactory extends BaseKeyedPooledObjectFactory<File, 
 
     @Override
     public void destroyObject(File key, PooledObject<FileOutputStream> p) throws Exception {
-        super.destroyObject(key, p);
         FileOutputStream fileOutputStream = p.getObject();
         try {
             Field pathField = FileOutputStream.class.getDeclaredField("path");
@@ -30,10 +29,13 @@ public class FileOutputStreamFactory extends BaseKeyedPooledObjectFactory<File, 
             FileStreamStatistics.actuallyClosedOutputFile(path);
         } catch (NoSuchFieldException e) {
             // Ignore
+            e.printStackTrace();
         } catch (IllegalAccessException e) {
             // Ignore
+            e.printStackTrace();
         }
         p.getObject().close();
+        super.destroyObject(key, p);
     }
 
     @Override

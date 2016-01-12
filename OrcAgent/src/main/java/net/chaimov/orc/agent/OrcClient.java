@@ -17,7 +17,7 @@ public class OrcClient {
 
    public static Options options = new Options();
 
-   public static void main(String[] args) throws IOException {
+   public static void main(String[] args) throws Exception {
        System.out.println("This is OrcClient.");
 
        JCommander jc = new JCommander(options, args);
@@ -35,6 +35,7 @@ public class OrcClient {
        } else {
            runWithBuiltinStreams();
        }
+
 
    }
 
@@ -87,7 +88,7 @@ public class OrcClient {
         }
     }
 
-    private static void runWithInstrumentedStreams() {
+    private static void runWithInstrumentedStreams() throws Exception {
         final List<Thread> threads = new LinkedList<Thread>();
         final LinkedList<String> files = new LinkedList<String>();
 
@@ -134,6 +135,21 @@ public class OrcClient {
                 }
             }
         }
+
+        // Test appending
+        for(int i = 0; i < 100; ++i) {
+            try {
+                InstrumentedFileOutputStream baz_out = new InstrumentedFileOutputStream("baz", true);
+                byte[] str = ("baz_" + i + "\n").getBytes();
+                baz_out.write(str);
+                baz_out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        InstrumentedFileInputStream.closePool();
+        InstrumentedFileOutputStream.closePool();
     }
 
     public static class Options {

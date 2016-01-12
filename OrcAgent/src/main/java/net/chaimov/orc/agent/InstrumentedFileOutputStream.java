@@ -207,4 +207,11 @@ public class InstrumentedFileOutputStream extends OutputStream {
         return wrappedStream.toString();
     }
 
+    public static void closePool() throws Exception {
+        regularPool.clear();
+        appendingPool.clear();
+        regularPool.close();
+        appendingPool.close();
+    }
+
 }
