@@ -1,5 +1,8 @@
 package net.chaimov.orc.agent;
 
+import org.apache.commons.pool2.KeyedObjectPool;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+
 import java.io.*;
 import java.nio.channels.FileChannel;
 
@@ -8,14 +11,26 @@ import java.nio.channels.FileChannel;
  */
 public class InstrumentedFileInputStream extends InputStream {
 
+    private static KeyedObjectPool<File, FileInputStream> pool =
+            new GenericKeyedObjectPool<File, FileInputStream>(new FileInputStreamFactory());
+
     protected final FileInputStream wrappedStream;
+    protected final boolean isBorrowed;
     protected final String path;
+    protected final File myFile;
     protected boolean closed = false;
 
     public InstrumentedFileInputStream(String name) throws FileNotFoundException {
         path = name;
         long start = System.nanoTime();
-        wrappedStream = new FileInputStream(name);
+        myFile = new File(name);
+        try {
+            wrappedStream = pool.borrowObject(myFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new FileNotFoundException("Unable to borrow FileInputStream from pool");
+        }
+        isBorrowed = true;
         long end = System.nanoTime();
         FileStreamStatistics.openedInputFile(path, end-start);
     }
@@ -23,21 +38,33 @@ public class InstrumentedFileInputStream extends InputStream {
     public InstrumentedFileInputStream(File file) throws FileNotFoundException {
         path = (file != null ? file.getPath() : null);
         long start = System.nanoTime();
-        wrappedStream = new FileInputStream(file);
+        myFile = file;
+        try {
+            wrappedStream = pool.borrowObject(file);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new FileNotFoundException();
+        }
+        isBorrowed = true;
         long end = System.nanoTime();
         FileStreamStatistics.openedInputFile(path, end-start);
     }
 
     public InstrumentedFileInputStream(FileDescriptor fdObj) {
         path = null;
+        myFile = null;
         long start = System.nanoTime();
         wrappedStream = new FileInputStream(fdObj);
         long end = System.nanoTime();
         FileStreamStatistics.openedInputFile(path, end-start);
+        isBorrowed = false;
     }
 
     @Override
     public int read() throws IOException {
+        if(closed) {
+            throw new IOException("Use after close.");
+        }
         long start = System.nanoTime();
         int result =  wrappedStream.read();
         long end = System.nanoTime();
@@ -47,6 +74,9 @@ public class InstrumentedFileInputStream extends InputStream {
 
     @Override
     public int read(byte[] b) throws IOException {
+        if(closed) {
+            throw new IOException("Use after close");
+        }
         long start = System.nanoTime();
         int result = wrappedStream.read(b);
         long end = System.nanoTime();
@@ -56,6 +86,9 @@ public class InstrumentedFileInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        if(closed) {
+            throw new IOException("Use after close");
+        }
         long start = System.nanoTime();
         int result =  wrappedStream.read(b, off, len);
         long end = System.nanoTime();
@@ -65,11 +98,17 @@ public class InstrumentedFileInputStream extends InputStream {
 
     @Override
     public long skip(long n) throws IOException {
+        if(closed) {
+            throw new IOException("Use after close");
+        }
         return wrappedStream.skip(n);
     }
 
     @Override
     public int available() throws IOException {
+        if(closed) {
+            throw new IOException("Use after close");
+        }
         return wrappedStream.available();
     }
 
@@ -77,7 +116,16 @@ public class InstrumentedFileInputStream extends InputStream {
     public void close() throws IOException {
         if(!closed) {
             closed = true;
-            wrappedStream.close();
+            if(isBorrowed) {
+                try {
+                    pool.returnObject(myFile, wrappedStream);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new IOException("Failed to return FileInputStream to pool");
+                }
+            } else {
+                wrappedStream.close();
+            }
             FileStreamStatistics.closedInputFile(path);
         }
     }
@@ -89,6 +137,9 @@ public class InstrumentedFileInputStream extends InputStream {
 
     @Override
     public synchronized void reset() throws IOException {
+        if(closed) {
+            throw new IOException("Use after close");
+        }
         wrappedStream.reset();
     }
 
